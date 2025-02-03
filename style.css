@@ -1,0 +1,33 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+.popup {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-width: 250px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.popup h3 {
+  margin: 0 0 10px;
+}
+
+@media (max-width: 768px) {
+  .popup {
+    max-width: 200px;
+    font-size: 14px;
+  }
+}
