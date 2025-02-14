@@ -43,62 +43,38 @@ const markerLayer = new VectorLayer({
 });
 map.addLayer(markerLayer);
 
-let watchId;
+// Fungsi menambahkan marker
+function addMarker(lon, lat, isUser = false) {
+  const marker = new Feature({
+    geometry: new Point(fromLonLat([lon, lat])),
+  });
 
-map.on("click", async function (event) {
-  const clickedCoordinates = toLonLat(event.coordinate);
-  const [longitude, latitude] = clickedCoordinates;
+  marker.setStyle(
+    new Style({
+      image: new Icon({
+        src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        scale: 0.05,
+      }),
+    })
+  );
 
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lon=${longitude}&lat=${latitude}`
-    );
-    const data = await response.json();
-    const locationName = data.display_name || "Alamat tidak ditemukan";
-
-    // Hapus semua marker kecuali marker lokasi pengguna
-    // Hapus marker sebelumnya yang merupakan hasil klik, tapi jangan hapus marker pengguna
-markerSource.getFeatures().forEach((feature) => {
-  if (!feature.get("isUserLocation") && feature.get("isClickedLocation")) {
-    markerSource.removeFeature(feature);
+  if (isUser) {
+    marker.set("isUserLocation", true);
+  } else {
+    marker.set("isClickedLocation", true);
   }
-});
 
+  markerSource.addFeature(marker);
+  return marker;
+}
 
-const marker = new Feature({
-  geometry: new Point(fromLonLat([longitude, latitude])),
-});
-marker.set("isClickedLocation", true); // Tandai sebagai marker hasil klik
-marker.setStyle(
-  new Style({
-    image: new Icon({
-      src: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-      scale: 0.05,
-    }),
-  })
-);
-markerSource.addFeature(marker);
-
-
-    popup.innerHTML = `
-      <div class="location-popup">
-        <h3><i class="fas fa-map-marker-alt"></i> Informasi Lokasi</h3>
-        <div class="location-details">
-          <p><strong>Alamat:</strong> ${locationName}</p>
-          <p><strong>Koordinat:</strong> ${longitude.toFixed(6)}, ${latitude.toFixed(6)}</p>
-        </div>
-      </div>`;
-    overlay.setPosition(event.coordinate);
-  } catch (error) {
-    console.error("Gagal mengambil alamat:", error);
-  }
-});
-
+// Fungsi mengambil lokasi pengguna
 function getLocation() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
       const userCoordinates = fromLonLat([longitude, latitude]);
+
       map.getView().setCenter(userCoordinates);
       map.getView().setZoom(16);
 
@@ -109,19 +85,7 @@ function getLocation() {
         }
       });
 
-      const userMarker = new Feature({
-        geometry: new Point(userCoordinates),
-      });
-      userMarker.setStyle(
-        new Style({
-          image: new Icon({
-            src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            scale: 0.05,
-          }),
-        })
-      );
-      userMarker.set("isUserLocation", true);
-      markerSource.addFeature(userMarker);
+      addMarker(longitude, latitude, true); // Tambahkan marker lokasi pengguna
 
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lon=${longitude}&lat=${latitude}`)
         .then((response) => response.json())
@@ -129,7 +93,7 @@ function getLocation() {
           const locationName = data.display_name || 'Tidak ada data lokasi';
           popup.innerHTML = `
             <div class="location-popup">
-              <h3><i class="fas fa-map-marker-alt"></i> Lokasi Anda</h3>
+              <h3><i class="fas "></i> Lokasi Anda</h3>
               <div class="location-details">
                 <p><strong>Alamat:</strong> ${locationName}</p>
                 <p><strong>Koordinat:</strong> ${longitude.toFixed(6)}, ${latitude.toFixed(6)}</p>
@@ -156,6 +120,42 @@ function getLocation() {
   );
 }
 
+// Event klik pada peta
+map.on("click", async function (event) {
+  const clickedCoordinates = toLonLat(event.coordinate);
+  const [longitude, latitude] = clickedCoordinates;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lon=${longitude}&lat=${latitude}`
+    );
+    const data = await response.json();
+    const locationName = data.display_name || "Alamat tidak ditemukan";
+
+    // Hapus semua marker hasil klik sebelumnya
+    markerSource.getFeatures().forEach((feature) => {
+      if (feature.get("isClickedLocation")) {
+        markerSource.removeFeature(feature);
+      }
+    });
+
+    addMarker(longitude, latitude, false); // Tambahkan marker baru hasil klik
+
+    popup.innerHTML = `
+      <div class="location-popup">
+        <h3><i class="fas "></i> Informasi Lokasi</h3>
+        <div class="location-details">
+          <p><strong>Alamat:</strong> ${locationName}</p>
+          <p><strong>Koordinat:</strong> ${longitude.toFixed(6)}, ${latitude.toFixed(6)}</p>
+        </div>
+      </div>`;
+    overlay.setPosition(event.coordinate);
+  } catch (error) {
+    console.error("Gagal mengambil alamat:", error);
+  }
+});
+
+// Event untuk memperbarui lokasi
 document.getElementById('refreshLocation').addEventListener('click', () => {
   Swal.fire({
     title: 'Memperbarui Lokasi...',
@@ -167,6 +167,7 @@ document.getElementById('refreshLocation').addEventListener('click', () => {
   getLocation();
 });
 
+// Event untuk berbagi lokasi
 document.getElementById('shareLocation').addEventListener('click', () => {
   navigator.geolocation.getCurrentPosition((pos) => {
     const { latitude, longitude } = pos.coords;
@@ -199,5 +200,5 @@ document.getElementById('shareLocation').addEventListener('click', () => {
   });
 });
 
-
+// Panggil fungsi untuk mendapatkan lokasi awal
 getLocation();
