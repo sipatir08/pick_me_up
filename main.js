@@ -158,14 +158,16 @@ map.on("click", async function (event) {
 // Event untuk memperbarui lokasi
 document.getElementById('refreshLocation').addEventListener('click', () => {
   Swal.fire({
-    title: 'Memperbarui Lokasi...',
+    title: 'Memuat Ulang...',
     text: 'Mohon tunggu sebentar.',
     icon: 'info',
     timer: 1500,
     showConfirmButton: false,
+  }).then(() => {
+    location.reload(); // Me-refresh halaman sepenuhnya
   });
-  getLocation();
 });
+
 
 // Event untuk berbagi lokasi
 document.getElementById('shareLocation').addEventListener('click', () => {
